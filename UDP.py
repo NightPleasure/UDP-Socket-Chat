@@ -31,9 +31,7 @@ def receive_messages():
             print("Error receiving message: {}".format(e))
 
 
-receiver_thread = threading.Thread(target=receive_messages)
-receiver_thread.daemon = True
-receiver_thread.start()
+receiver_thread = threading.Thread(target=receive_messages).start()
 
 while True:
     try:
