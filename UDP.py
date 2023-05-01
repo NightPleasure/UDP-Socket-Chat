@@ -6,38 +6,57 @@ sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
 sock.bind(('', 40404))
 
-nickname = input("Enter your nickname: ")
+try:
+    nickname = input("Enter your nickname: ")
+except KeyboardInterrupt:
+    print("\nExiting program...")
+    exit()
 
 nickname_map = {}
 
 
 def receive_messages():
     while True:
-        data, address = sock.recvfrom(40404)
-        message = data.decode()
+        try:
+            data, address = sock.recvfrom(40404)
+            message = data.decode()
 
-        if ':' in message:
-            nickname, message = message.split(':', 1)
-            nickname_map[address] = nickname.strip()
+            if ':' in message:
+                nickname, message = message.split(':', 1)
+                nickname_map[address] = nickname.strip()
 
-        nickname = nickname_map.get(address, str(address))
-        print("{}: {}".format(nickname, message.strip()))
+            nickname = nickname_map.get(address, str(address))
+            print("{}: {}".format(nickname, message.strip()))
+        except socket.error as e:
+            print("Error receiving message: {}".format(e))
 
 
-receiver_thread = threading.Thread(target=receive_messages).start()
+receiver_thread = threading.Thread(target=receive_messages)
+receiver_thread.daemon = True
+receiver_thread.start()
 
 while True:
-    message = input("\nEnter your message: ")
+    try:
+        message = input("\nEnter your message: ")
 
-    if message.startswith('/pm'):
-        parts = message.split(':', 2)
-        if len(parts) == 3:
-            ip = parts[1].strip()
-            message = "{}: {}".format(nickname, parts[2].strip())
-            sock.sendto(message.encode(), (ip, 40404))
-            print("Sent private message to {}".format(ip))
+        if message.startswith('/pm'):
+            parts = message.split(':', 2)
+            if len(parts) == 3:
+                ip = parts[1].strip()
+                message = "{}: {}".format(nickname, parts[2].strip())
+                try:
+                    sock.sendto(message.encode(), (ip, 40404))
+                    print("Sent private message to {}".format(ip))
+                except socket.error as e:
+                    print("Error sending private message: {}".format(e))
+            else:
+                print("Invalid private message format. Usage: /pm IP_ADDRESS: MESSAGE")
         else:
-            print("Invalid private message format. Usage: /pm IP_ADDRESS: MESSAGE")
-    else:
-        message = "{}: {}".format(nickname, message)
-        sock.sendto(message.encode(), ('<broadcast>', 40404))
+            message = "{}: {}".format(nickname, message)
+            try:
+                sock.sendto(message.encode(), ('<broadcast>', 40404))
+            except socket.error as e:
+                print("Error sending message: {}".format(e))
+    except KeyboardInterrupt:
+        print("\nExiting program...")
+        exit()
