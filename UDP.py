@@ -23,16 +23,13 @@ def receive_messages():
 
             if ':' in message:
                 nickname, message = message.split(':', 1)
-                if message.startswith('/pm '):
-                    private_message = message[4:]
-                    nickname_map[address] = nickname.strip()
-                    nickname = nickname_map.get(address, str(address))
-                    print("(private) {}({}): {}".format(nickname, address, private_message.strip()))
-                else:
-                    nickname_map[address] = nickname.strip()
-                    nickname = nickname_map.get(address, str(address))
-                    print("{}({}): {}".format(nickname, address, message.strip()))
+                nickname_map[address] = nickname.strip()
 
+            nickname = nickname_map.get(address, str(address))
+            if message.startswith("(privat) "):
+                print("{}({}): {}".format(nickname, address, message.strip()))
+            else:
+                print("{}({}): {}".format(nickname, address, message.strip()))
         except socket.error as e:
             print("Error receiving message: {}".format(e))
 
@@ -47,7 +44,7 @@ while True:
             parts = message.split(' ')
             if len(parts) == 3:
                 ip = parts[1].strip()
-                message = "{}: {}".format(nickname, parts[2].strip())
+                message = "(privat) {}: {}".format(nickname, parts[2].strip())
                 try:
                     sock.sendto(message.encode(), (ip, 40404))
                     print("Sent private message to {}".format(ip))
