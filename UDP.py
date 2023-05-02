@@ -23,10 +23,16 @@ def receive_messages():
 
             if ':' in message:
                 nickname, message = message.split(':', 1)
-                nickname_map[address] = nickname.strip()
+                if message.startswith('/pm '):
+                    private_message = message[4:]
+                    nickname_map[address] = nickname.strip()
+                    nickname = nickname_map.get(address, str(address))
+                    print("(private) {}({}): {}".format(nickname, address, private_message.strip()))
+                else:
+                    nickname_map[address] = nickname.strip()
+                    nickname = nickname_map.get(address, str(address))
+                    print("{}({}): {}".format(nickname, address, message.strip()))
 
-            nickname = nickname_map.get(address, str(address))
-            print("{}: {}".format(nickname, message.strip()))
         except socket.error as e:
             print("Error receiving message: {}".format(e))
 
@@ -35,10 +41,10 @@ receiver_thread = threading.Thread(target=receive_messages).start()
 
 while True:
     try:
-        message = input("\nEnter your message: ")
+        message = input("Enter your message: \n")
 
-        if message.startswith('/pm'):
-            parts = message.split(':', 2)
+        if message.startswith('/pm '):
+            parts = message.split(' ')
             if len(parts) == 3:
                 ip = parts[1].strip()
                 message = "{}: {}".format(nickname, parts[2].strip())
@@ -48,7 +54,7 @@ while True:
                 except socket.error as e:
                     print("Error sending private message: {}".format(e))
             else:
-                print("Invalid private message format. Usage: /pm IP_ADDRESS: MESSAGE")
+                print("Invalid private message format. Usage: /pm IP_ADDRESS MESSAGE")
         else:
             message = "{}: {}".format(nickname, message)
             try:
